@@ -1,3 +1,5 @@
+pub mod cli;
+
 use anyhow::*;
 use std::{
     fs::DirEntry,
