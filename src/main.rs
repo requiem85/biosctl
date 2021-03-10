@@ -1,8 +1,9 @@
 use anyhow::*;
 use firmconfig::{cli::ProgramOptions, Attribute, AttributeType};
 use std::{
+    ffi::OsStr,
     io::{stdout, Write},
-    path::PathBuf,
+    path::{Path, PathBuf},
 };
 use structopt::StructOpt;
 
@@ -10,17 +11,32 @@ fn main() -> Result<()> {
     let options = ProgramOptions::from_args();
     match options.cmd {
         firmconfig::cli::Command::Print { device_name } => {
-            let mut path = PathBuf::from("/sys/class/firmware-attributes");
-            path.push(device_name);
-
-            let attributes = firmconfig::list_attributes(&path)?;
-
-            for a in attributes {
-                print_attribute(&a)?;
+            if let Some(name) = device_name {
+                print_device(&name)?;
+            } else {
+                let path = Path::new("/sys/class/firmware-attributes");
+                for d in path.read_dir()? {
+                    if let Ok(d) = d {
+                        print_device(&d.file_name())?;
+                    }
+                }
             }
         }
     }
 
+    Ok(())
+}
+
+fn print_device(name: &OsStr) -> Result<()> {
+    let mut path = PathBuf::from("/sys/class/firmware-attributes");
+    path.push(name);
+
+    let attributes = firmconfig::list_attributes(&path)?;
+
+    println!("Device: {}\n", name.to_string_lossy());
+    for a in attributes {
+        print_attribute(&a)?;
+    }
     Ok(())
 }
 
