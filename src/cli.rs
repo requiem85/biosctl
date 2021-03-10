@@ -11,7 +11,7 @@ pub struct ProgramOptions {
 #[derive(StructOpt, Debug)]
 pub enum Command {
     Print {
-        #[structopt(name = "INTERFACE")]
-        interface_name: String,
+        #[structopt(long, short)]
+        device_name: String,
     },
 }
