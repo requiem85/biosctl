@@ -3,6 +3,7 @@ name = "firmconfig"
 version = "0.1.0"
 authors = ["Antoine Gourlay <antoine@gourlay.fr>"]
 edition = "2018"
+license = "MIT"
 
 [dependencies]
 anyhow = "1"
