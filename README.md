@@ -49,7 +49,7 @@ firmconfig is written in Rust, so you need a [Rust install] to build it. firmcon
 Build it from source with:
 
 ```sh
-$ git clone https://github.com/gourlaysama/firmconfig
+$ git clone https://github.com/gourlaysama/firmconfig -b v0.1.0
 $ cd firmconfig
 $ cargo build --release
 $ ./target/release/firmconfig --version
