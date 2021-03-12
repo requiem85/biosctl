@@ -17,4 +17,8 @@ pub enum Command {
         #[structopt(name = "ATTRIBUTE")]
         attribute: Option<OsString>,
     },
+    List {
+        #[structopt(long, short)]
+        device_name: Option<OsString>,
+    }
 }
