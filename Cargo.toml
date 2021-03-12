@@ -1,6 +1,6 @@
 [package]
 name = "firmconfig"
-version = "0.1.0"
+version = "0.1.0-dev"
 authors = ["Antoine Gourlay <antoine@gourlay.fr>"]
 edition = "2018"
 license = "MIT"
@@ -12,3 +12,6 @@ anyhow = "1"
 version = '0.3'
 default-features = false
 features = ['suggestions']
+
+[profile.release]
+lto = true
