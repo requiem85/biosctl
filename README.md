@@ -53,7 +53,7 @@ $ git clone https://github.com/gourlaysama/firmconfig
 $ cd firmconfig
 $ cargo build --release
 $ ./target/release/firmconfig --version
-firmconfig 0.1.0
+firmconfig 0.1.0-dev
 
 ```
 

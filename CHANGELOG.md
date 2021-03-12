@@ -12,4 +12,4 @@
 * Both subcommands take a `-d/--device-name` to restrict the search to a single device, otherwise it picks the first attribute with the right name it finds.
 
 <!-- next-url -->
-[Unreleased]: https://github.com/gourlaysama/girouette/compare/757e73c...HEAD
+[Unreleased]: https://github.com/gourlaysama/firmconfig/compare/757e73c...HEAD
