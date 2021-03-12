@@ -2,6 +2,12 @@
 
 **firmconfig** is a command line tool to display firmware configuration attributes exposed by the Linux kernel (since kernel 5.11).
 
+## Installation
+
+Precompiled binaries are available on the [Release Page] for x86_64 Linux (statically linked).
+
+Otherwise you will need to [build from source](#building-from-source).
+
 ## Usage
 
 List all available config attributes with:
@@ -73,3 +79,4 @@ without any additional terms or conditions.
 
 [Rust install]: https://www.rust-lang.org/tools/install
 [firmware configuration attributes]: https://www.kernel.org/doc/html/v5.11/admin-guide/abi-testing.html#abi-sys-class-firmware-attributes-attributes
+[Release Page]: https://github.com/gourlaysama/firmconfig/releases/latest
