@@ -10,14 +10,17 @@ use structopt::StructOpt;
 fn main() -> Result<()> {
     let options = ProgramOptions::from_args();
     match options.cmd {
-        firmconfig::cli::Command::Print { device_name } => {
+        firmconfig::cli::Command::Print {
+            device_name,
+            attribute,
+        } => {
             if let Some(name) = device_name {
-                print_device(&name)?;
+                print_device(&name, attribute.as_deref())?;
             } else {
                 let path = Path::new("/sys/class/firmware-attributes");
                 for d in path.read_dir()? {
                     if let Ok(d) = d {
-                        print_device(&d.file_name())?;
+                        print_device(&d.file_name(), attribute.as_deref())?;
                     }
                 }
             }
@@ -27,11 +30,25 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-fn print_device(name: &OsStr) -> Result<()> {
+fn attributes_from(name: &OsStr) -> Result<Vec<Attribute>> {
     let mut path = PathBuf::from("/sys/class/firmware-attributes");
     path.push(name);
 
-    let attributes = firmconfig::list_attributes(&path)?;
+    firmconfig::list_attributes(&path)
+}
+
+fn print_device(name: &OsStr, attribute: Option<&OsStr>) -> Result<()> {
+    let attributes = attributes_from(name)?;
+
+    if let Some(attribute) = attribute {
+        if let Some(a) = attributes.iter().find(|a| a.name == attribute) {
+            println!("Device: {}\n", name.to_string_lossy());
+            print_attribute(&a)?;
+            return Ok(());
+        } else {
+            bail!("no attribute with name {}", attribute.to_string_lossy());
+        }
+    }
 
     println!("Device: {}\n", name.to_string_lossy());
     for a in attributes {
@@ -43,7 +60,7 @@ fn print_device(name: &OsStr) -> Result<()> {
 fn print_attribute(a: &Attribute) -> Result<()> {
     let out = stdout();
     let mut f = out.lock();
-    writeln!(f, "{}", a.name)?;
+    writeln!(f, "{}", a.name.to_string_lossy())?;
     writeln!(f, "    Name: {}", a.display_name)?;
     match a.tpe {
         AttributeType::Integer { min, max, step } => {

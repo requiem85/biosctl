@@ -2,13 +2,14 @@ pub mod cli;
 
 use anyhow::*;
 use std::{
+    ffi::OsString,
     fs::DirEntry,
     path::{Path, PathBuf},
 };
 
 #[derive(Debug)]
 pub struct Attribute {
-    pub name: String,
+    pub name: OsString,
     pub tpe: AttributeType,
     pub current_value: Result<String>,
     pub default_value: Result<String>,
@@ -40,7 +41,7 @@ pub fn list_attributes(interface: &Path) -> Result<Vec<Attribute>> {
     for d in attributes_path.read_dir()? {
         if let Ok(d) = d {
             if d.file_type()?.is_dir() {
-                let name = d.file_name().to_string_lossy().to_string();
+                let name = d.file_name();
                 let current_value = read_value(&d, "current_value");
                 let default_value = read_value(&d, "default_value");
 

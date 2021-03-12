@@ -2,9 +2,7 @@ use std::ffi::OsString;
 use structopt::StructOpt;
 
 #[derive(StructOpt, Debug)]
-#[structopt(
-    about = "Manage firmware configuration",
-)]
+#[structopt(about = "Manage firmware configuration")]
 pub struct ProgramOptions {
     #[structopt(subcommand)]
     pub cmd: Command,
@@ -15,5 +13,8 @@ pub enum Command {
     Print {
         #[structopt(long, short)]
         device_name: Option<OsString>,
+
+        #[structopt(name = "ATTRIBUTE")]
+        attribute: Option<OsString>,
     },
 }
