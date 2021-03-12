@@ -5,6 +5,9 @@
 <!-- next-header -->
 ## [Unreleased] - TBD
 
+
+## [0.1.0] - 2021-03-12
+
 ### Added
 
 * A `list` subcommand to list all available attributes.
@@ -12,4 +15,5 @@
 * Both subcommands take a `-d/--device-name` to restrict the search to a single device, otherwise it picks the first attribute with the right name it finds.
 
 <!-- next-url -->
-[Unreleased]: https://github.com/gourlaysama/firmconfig/compare/757e73c...HEAD
+[Unreleased]: https://github.com/gourlaysama/firmconfig/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/gourlaysama/firmconfig/compare/757e73c...v0.1.0
