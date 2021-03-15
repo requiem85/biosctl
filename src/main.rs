@@ -17,32 +17,49 @@ fn main() -> Result<()> {
             device_name,
             attribute,
         } => {
-            if let Some(name) = device_name {
-                print_device(&name, attribute.as_deref())?;
-            } else {
-                let path = Path::new("/sys/class/firmware-attributes");
-                for d in path.read_dir()? {
-                    if let Ok(d) = d {
-                        print_device(&d.file_name(), attribute.as_deref())?;
-                    }
-                }
-            }
+            do_for_device(device_name.as_deref(), |name| {
+                print_device(&name, attribute.as_deref())
+            })?;
         }
         Command::List { device_name } => {
-            if let Some(name) = device_name {
-                list_device(&name)?;
-            } else {
-                let path = Path::new("/sys/class/firmware-attributes");
-                for d in path.read_dir()? {
-                    if let Ok(d) = d {
-                        list_device(&d.file_name())?;
-                    }
-                }
-            }
+            do_for_device(device_name.as_deref(), |name| list_device(name))?;
+        }
+        Command::Get {
+            device_name,
+            default,
+            name,
+            attribute,
+        } => {
+            do_for_device(device_name.as_deref(), |device_name| {
+                get_attribute_value(device_name, &attribute, default, name)?
+            })?;
         }
     }
 
     Ok(())
+}
+
+fn do_for_device<F, O>(device_name: Option<&OsStr>, f: F) -> Result<Option<O>>
+where
+    F: Fn(&OsStr) -> Result<O>,
+{
+    if let Some(name) = device_name {
+        f(name).map(Some)
+    } else {
+        let path = Path::new("/sys/class/firmware-attributes");
+        let mut o: Result<Option<O>> = Ok(None);
+        for d in path.read_dir()? {
+            if let Ok(d) = d {
+                let r = f(&d.file_name()).map(Some);
+                if let Ok(None) = o {
+                    o = r
+                } else if r.is_ok() {
+                    o = r
+                }
+            }
+        }
+        o
+    }
 }
 
 fn attributes_from(name: &OsStr) -> Result<Vec<Attribute>> {
@@ -50,6 +67,42 @@ fn attributes_from(name: &OsStr) -> Result<Vec<Attribute>> {
     path.push(name);
 
     firmconfig::list_attributes(&path)
+}
+
+fn get_attribute_value(
+    device_name: &OsStr,
+    attribute: &OsStr,
+    default: bool,
+    name: bool,
+) -> Result<Result<(), Error>, Error> {
+    if let Some(a) = get_attribute(device_name, attribute)? {
+        if default {
+            if let Ok(d) = a.default_value {
+                println!("{}", d);
+            } else {
+                println!("<Access Denied>");
+            }
+        } else if name {
+            println!("{}", a.display_name);
+        } else if let Ok(d) = a.current_value {
+            println!("{}", d);
+        } else {
+            println!("<Access Denied>");
+        }
+    }
+    Ok(Ok(()))
+}
+
+fn get_attribute(device_name: &OsStr, name: &OsStr) -> Result<Option<Attribute>> {
+    let attributes = attributes_from(device_name)?;
+
+    for a in attributes {
+        if a.name == name {
+            return Ok(Some(a));
+        }
+    }
+
+    Err(anyhow!("no attribute with name {}", name.to_string_lossy()))
 }
 
 fn list_device(name: &OsStr) -> Result<()> {

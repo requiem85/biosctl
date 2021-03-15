@@ -20,5 +20,18 @@ pub enum Command {
     List {
         #[structopt(long, short = "D")]
         device_name: Option<OsString>,
-    }
+    },
+    Get {
+        #[structopt(long, short = "D")]
+        device_name: Option<OsString>,
+
+        #[structopt(long, short)]
+        default: bool,
+
+        #[structopt(long, short, conflicts_with("default"))]
+        name: bool,
+
+        #[structopt(name = "ATTRIBUTE")]
+        attribute: OsString,
+    },
 }
