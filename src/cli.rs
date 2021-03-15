@@ -11,14 +11,14 @@ pub struct ProgramOptions {
 #[derive(StructOpt, Debug)]
 pub enum Command {
     Print {
-        #[structopt(long, short)]
+        #[structopt(long, short = "D")]
         device_name: Option<OsString>,
 
         #[structopt(name = "ATTRIBUTE")]
         attribute: Option<OsString>,
     },
     List {
-        #[structopt(long, short)]
+        #[structopt(long, short = "D")]
         device_name: Option<OsString>,
     }
 }
