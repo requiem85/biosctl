@@ -34,4 +34,7 @@ pub enum Command {
         #[structopt(name = "ATTRIBUTE")]
         attribute: OsString,
     },
+    Info {
+        device_name: Option<OsString>,
+    },
 }

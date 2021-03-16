@@ -1,7 +1,7 @@
 use anyhow::*;
 use firmconfig::{
     cli::{Command, ProgramOptions},
-    Attribute, AttributeType,
+    Attribute, AttributeType, Authentication, AuthenticationRole,
 };
 use std::{
     ffi::OsStr,
@@ -33,6 +33,9 @@ fn main() -> Result<()> {
             do_for_device(device_name.as_deref(), |device_name| {
                 get_attribute_value(device_name, &attribute, default, name)?
             })?;
+        }
+        Command::Info { device_name } => {
+            do_for_device(device_name.as_deref(), |name| device_info(name))?;
         }
     }
 
@@ -67,6 +70,39 @@ fn attributes_from(name: &OsStr) -> Result<Vec<Attribute>> {
     path.push(name);
 
     firmconfig::list_attributes(&path)
+}
+
+fn authentications_from(name: &OsStr) -> Result<Vec<Authentication>> {
+    let mut path = PathBuf::from("/sys/class/firmware-attributes");
+    path.push(name);
+
+    firmconfig::list_authentications(&path)
+}
+
+fn device_info(name: &OsStr) -> Result<()> {
+    println!("Device: {}", name.to_string_lossy());
+
+    let attributes = attributes_from(name)?;
+    println!("    {} attributes", attributes.len());
+
+    let auths = authentications_from(name)?;
+    if !auths.is_empty() {
+        println!("\n    Authentication methods:");
+    }
+    for a in auths {
+        println!("        {}", a.name.to_string_lossy());
+        let role = match a.role {
+            AuthenticationRole::BiosAdmin => "Change BIOS Settings".to_string(),
+            AuthenticationRole::PowerOn => "Power on computer".to_string(),
+            AuthenticationRole::Unknown(a) => format!("Unkown role ({})", a),
+        };
+        println!("            Role: {}", role);
+
+        let status = if a.is_enabled { "Enabled" } else { "Disabled" };
+        println!("            Status: {}", status);
+    }
+
+    Ok(())
 }
 
 fn get_attribute_value(

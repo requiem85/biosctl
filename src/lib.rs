@@ -16,6 +16,7 @@ pub struct Attribute {
     pub display_name: String,
     pub display_name_lang: String,
 }
+
 #[derive(Debug)]
 pub enum AttributeType {
     Integer { min: i64, max: i64, step: u64 },
@@ -23,16 +24,56 @@ pub enum AttributeType {
     Enumeration { possible_values: Vec<String> },
 }
 
-pub fn list_attributes(interface: &Path) -> Result<Vec<Attribute>> {
-    fn read_value(entry: &DirEntry, name: &str) -> Result<String> {
-        let mut p = entry.path();
-        p.push(name);
-        let mut v = std::fs::read_to_string(p)?;
-        v = v.trim_end().to_string();
+#[derive(Debug)]
+pub struct Authentication {
+    pub name: OsString,
+    pub is_enabled: bool,
+    pub min_password_length: u64,
+    pub max_password_length: u64,
+    pub role: AuthenticationRole,
+}
 
-        Ok(v)
+#[derive(Debug)]
+pub enum AuthenticationRole {
+    BiosAdmin,
+    PowerOn,
+    Unknown(String),
+}
+
+pub fn list_authentications(interface: &Path) -> Result<Vec<Authentication>> {
+    let mut auths = Vec::new();
+
+    let mut auth_path = PathBuf::from(interface);
+    auth_path.push("authentication");
+
+    for d in auth_path.read_dir()? {
+        if let Ok(d) = d {
+            if d.file_type()?.is_dir() {
+                let name = d.file_name();
+                let is_enabled = !matches!(read_value(&d, "is_enabled")?.as_ref(), "0");
+                let min_password_length = read_value(&d, "min_password_length")?.parse()?;
+                let max_password_length = read_value(&d, "max_password_length")?.parse()?;
+                let role = match read_value(&d, "role")?.as_ref() {
+                    "bios-admin" => AuthenticationRole::BiosAdmin,
+                    "power-on" => AuthenticationRole::PowerOn,
+                    a => AuthenticationRole::Unknown(a.to_string()),
+                };
+
+                auths.push(Authentication {
+                    name,
+                    is_enabled,
+                    min_password_length,
+                    max_password_length,
+                    role,
+                })
+            }
+        }
     }
 
+    Ok(auths)
+}
+
+pub fn list_attributes(interface: &Path) -> Result<Vec<Attribute>> {
     let mut attributes_path = PathBuf::from(interface);
     attributes_path.push("attributes");
 
@@ -94,4 +135,13 @@ pub fn list_attributes(interface: &Path) -> Result<Vec<Attribute>> {
     }
 
     Ok(attributes)
+}
+
+fn read_value(entry: &DirEntry, name: &str) -> Result<String> {
+    let mut p = entry.path();
+    p.push(name);
+    let mut v = std::fs::read_to_string(p)?;
+    v = v.trim_end().to_string();
+
+    Ok(v)
 }
