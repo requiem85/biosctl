@@ -6,63 +6,32 @@ use firmconfig::{
 use std::{
     ffi::OsStr,
     io::{stdout, Write},
-    path::{Path, PathBuf},
+    path::PathBuf,
 };
 use structopt::StructOpt;
 
 fn main() -> Result<()> {
     let options = ProgramOptions::from_args();
     match options.cmd {
-        Command::Print {
-            device_name,
-            attribute,
-        } => {
-            do_for_device(device_name.as_deref(), |name| {
-                print_device(&name, attribute.as_deref())
-            })?;
+        Command::Print { attribute } => {
+            print_device(&options.device_name, attribute.as_deref())?;
         }
-        Command::List { device_name } => {
-            do_for_device(device_name.as_deref(), |name| list_device(name))?;
+        Command::List => {
+            list_device(&options.device_name)?;
         }
         Command::Get {
-            device_name,
             default,
             name,
             attribute,
         } => {
-            do_for_device(device_name.as_deref(), |device_name| {
-                get_attribute_value(device_name, &attribute, default, name)?
-            })?;
+            print_attribute_value(&options.device_name, &attribute, default, name)?;
         }
-        Command::Info { device_name } => {
-            do_for_device(device_name.as_deref(), |name| device_info(name))?;
+        Command::Info => {
+            device_info(&options.device_name)?;
         }
     }
 
     Ok(())
-}
-
-fn do_for_device<F, O>(device_name: Option<&OsStr>, f: F) -> Result<Option<O>>
-where
-    F: Fn(&OsStr) -> Result<O>,
-{
-    if let Some(name) = device_name {
-        f(name).map(Some)
-    } else {
-        let path = Path::new("/sys/class/firmware-attributes");
-        let mut o: Result<Option<O>> = Ok(None);
-        for d in path.read_dir()? {
-            if let Ok(d) = d {
-                let r = f(&d.file_name()).map(Some);
-                if let Ok(None) = o {
-                    o = r
-                } else if r.is_ok() {
-                    o = r
-                }
-            }
-        }
-        o
-    }
 }
 
 fn attributes_from(name: &OsStr) -> Result<Vec<Attribute>> {
@@ -105,12 +74,12 @@ fn device_info(name: &OsStr) -> Result<()> {
     Ok(())
 }
 
-fn get_attribute_value(
+fn print_attribute_value(
     device_name: &OsStr,
     attribute: &OsStr,
     default: bool,
     name: bool,
-) -> Result<Result<(), Error>, Error> {
+) -> Result<(), Error> {
     if let Some(a) = get_attribute(device_name, attribute)? {
         if default {
             if let Ok(d) = a.default_value {
@@ -126,7 +95,7 @@ fn get_attribute_value(
             println!("<Access Denied>");
         }
     }
-    Ok(Ok(()))
+    Ok(())
 }
 
 fn get_attribute(device_name: &OsStr, name: &OsStr) -> Result<Option<Attribute>> {

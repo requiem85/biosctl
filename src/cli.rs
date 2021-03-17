@@ -2,8 +2,11 @@ use std::ffi::OsString;
 use structopt::StructOpt;
 
 #[derive(StructOpt, Debug)]
-#[structopt(about = "Manage firmware configuration")]
+#[structopt(about = "Manage dell BIOS/EFI settings")]
 pub struct ProgramOptions {
+    #[structopt(long, short = "D", default_value("dell-wmi-sysman".into()))]
+    pub device_name: OsString,
+
     #[structopt(subcommand)]
     pub cmd: Command,
 }
@@ -11,30 +14,19 @@ pub struct ProgramOptions {
 #[derive(StructOpt, Debug)]
 pub enum Command {
     Print {
-        #[structopt(long, short = "D")]
-        device_name: Option<OsString>,
-
-        #[structopt(name = "ATTRIBUTE")]
+        #[structopt(name = "SETTING")]
         attribute: Option<OsString>,
     },
-    List {
-        #[structopt(long, short = "D")]
-        device_name: Option<OsString>,
-    },
+    List,
     Get {
-        #[structopt(long, short = "D")]
-        device_name: Option<OsString>,
-
         #[structopt(long, short)]
         default: bool,
 
         #[structopt(long, short, conflicts_with("default"))]
         name: bool,
 
-        #[structopt(name = "ATTRIBUTE")]
+        #[structopt(name = "SETTING")]
         attribute: OsString,
     },
-    Info {
-        device_name: Option<OsString>,
-    },
+    Info,
 }
