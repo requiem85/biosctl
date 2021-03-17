@@ -3,7 +3,7 @@ pub mod cli;
 use anyhow::*;
 use std::{
     ffi::{OsStr, OsString},
-    fs::DirEntry,
+    os::unix::ffi::OsStrExt,
     path::PathBuf,
 };
 
@@ -34,10 +34,15 @@ impl Device {
             if let Ok(d) = d {
                 if d.file_type()?.is_dir() {
                     let name = d.file_name();
-                    let is_enabled = !matches!(read_value(&d, "is_enabled")?.as_ref(), "0");
-                    let min_password_length = read_value(&d, "min_password_length")?.parse()?;
-                    let max_password_length = read_value(&d, "max_password_length")?.parse()?;
-                    let role = match read_value(&d, "role")?.as_ref() {
+                    let is_enabled = !matches!(
+                        read_value(d.path(), OsStr::new("is_enabled"))?.as_ref(),
+                        "0"
+                    );
+                    let min_password_length =
+                        read_value(d.path(), OsStr::new("min_password_length"))?.parse()?;
+                    let max_password_length =
+                        read_value(d.path(), OsStr::new("max_password_length"))?.parse()?;
+                    let role = match read_value(d.path(), OsStr::new("role"))?.as_ref() {
                         "bios-admin" => AuthenticationRole::BiosAdmin,
                         "power-on" => AuthenticationRole::PowerOn,
                         a => AuthenticationRole::Unknown(a.to_string()),
@@ -67,16 +72,18 @@ impl Device {
             if let Ok(d) = d {
                 if d.file_type()?.is_dir() {
                     let name = d.file_name();
-                    let current_value = read_value(&d, "current_value");
-                    let default_value = read_value(&d, "default_value");
+                    let current_value = read_value(d.path(), OsStr::new("current_value"));
+                    let default_value = read_value(d.path(), OsStr::new("default_value"));
 
-                    let display_name = read_value(&d, "display_name")?;
-                    let display_name_lang = read_value(&d, "display_name_language_code")?;
+                    let display_name = read_value(d.path(), OsStr::new("display_name"))?;
+                    let display_name_lang =
+                        read_value(d.path(), OsStr::new("display_name_language_code"))?;
 
-                    let tpe_name = read_value(&d, "type")?;
+                    let tpe_name = read_value(d.path(), OsStr::new("type"))?;
                     let tpe = match tpe_name.as_ref() {
                         "enumeration" => {
-                            let p_value_string = read_value(&d, "possible_values")?;
+                            let p_value_string =
+                                read_value(d.path(), OsStr::new("possible_values"))?;
                             let mut p_values = Vec::new();
                             for v in p_value_string.split(';') {
                                 p_values.push(v.to_string());
@@ -86,15 +93,20 @@ impl Device {
                             }
                         }
                         "integer" => {
-                            let min: i64 = read_value(&d, "min_value")?.parse()?;
-                            let max: i64 = read_value(&d, "max_value")?.parse()?;
-                            let step: u64 = read_value(&d, "scalar_increment")?.parse()?;
+                            let min: i64 =
+                                read_value(d.path(), OsStr::new("min_value"))?.parse()?;
+                            let max: i64 =
+                                read_value(d.path(), OsStr::new("max_value"))?.parse()?;
+                            let step: u64 =
+                                read_value(d.path(), OsStr::new("scalar_increment"))?.parse()?;
 
                             AttributeType::Integer { min, max, step }
                         }
                         "string" => {
-                            let min_length: u64 = read_value(&d, "min_length")?.parse()?;
-                            let max_length: u64 = read_value(&d, "min_length")?.parse()?;
+                            let min_length: u64 =
+                                read_value(d.path(), OsStr::new("min_length"))?.parse()?;
+                            let max_length: u64 =
+                                read_value(d.path(), OsStr::new("min_length"))?.parse()?;
 
                             AttributeType::String {
                                 min_length,
@@ -107,6 +119,7 @@ impl Device {
                     };
 
                     attributes.push(Attribute {
+                        device: self,
                         name,
                         tpe,
                         current_value,
@@ -123,13 +136,29 @@ impl Device {
 }
 
 #[derive(Debug)]
-pub struct Attribute {
+pub struct Attribute<'a> {
+    device: &'a Device,
     pub name: OsString,
     pub tpe: AttributeType,
     pub current_value: Result<String>,
     pub default_value: Result<String>,
     pub display_name: String,
     pub display_name_lang: String,
+}
+
+impl<'a> Attribute<'a> {
+    pub fn set_value(&mut self, value: &OsStr) -> Result<()> {
+        let mut p = PathBuf::from(&self.device.path);
+        p.push("attributes");
+        p.push(&self.name);
+        p.push("current_value");
+
+        std::fs::write(&p, value.as_bytes())?;
+
+        self.current_value = read_value(self.device.path.to_path_buf(), &self.name);
+
+        Ok(())
+    }
 }
 
 #[derive(Debug)]
@@ -155,8 +184,8 @@ pub enum AuthenticationRole {
     Unknown(String),
 }
 
-fn read_value(entry: &DirEntry, name: &str) -> Result<String> {
-    let mut p = entry.path();
+fn read_value(path: PathBuf, name: &OsStr) -> Result<String> {
+    let mut p = path;
     p.push(name);
     let mut v = std::fs::read_to_string(p)?;
     v = v.trim_end().to_string();

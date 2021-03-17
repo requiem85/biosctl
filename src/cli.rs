@@ -28,5 +28,12 @@ pub enum Command {
         #[structopt(name = "SETTING")]
         attribute: OsString,
     },
+    Set {
+        #[structopt(name = "SETTING")]
+        attribute: OsString,
+
+        #[structopt(name = "VALUE")]
+        value: OsString,
+    },
     Info,
 }

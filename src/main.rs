@@ -28,6 +28,14 @@ fn main() -> Result<()> {
         Command::Info => {
             device_info(&options.device_name)?;
         }
+        Command::Set { attribute, value } => {
+            let device = Device::from(&options.device_name);
+            if let Some(mut attr) = get_attribute(&device, &attribute)? {
+                attr.set_value(&value)?;
+            } else {
+                bail!("no setting with name '{}'", attribute.to_string_lossy());
+            }
+        }
     }
 
     Ok(())
@@ -66,7 +74,8 @@ fn print_attribute_value(
     default: bool,
     name: bool,
 ) -> Result<(), Error> {
-    if let Some(a) = get_attribute(device_name, attribute)? {
+    let device = Device::from(device_name);
+    if let Some(a) = get_attribute(&device, attribute)? {
         if default {
             if let Ok(d) = a.default_value {
                 println!("{}", d);
@@ -84,8 +93,7 @@ fn print_attribute_value(
     Ok(())
 }
 
-fn get_attribute(device_name: &OsStr, name: &OsStr) -> Result<Option<Attribute>> {
-    let device = Device::from(device_name);
+fn get_attribute<'a>(device: &'a Device, name: &OsStr) -> Result<Option<Attribute<'a>>> {
     let attributes = device.attributes()?;
 
     for a in attributes {
