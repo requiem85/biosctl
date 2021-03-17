@@ -5,6 +5,9 @@
 <!-- next-header -->
 ## [Unreleased] - TBD
 
+
+## [0.2.0] - 2021-03-17
+
 ### Added
 
 * A `get` subcommand to get the value of a setting, with `-d/--default` and `-n/--name` to get the default value or display name instead.
@@ -25,5 +28,6 @@
 * Both subcommands take a `-d/--device-name` to restrict the search to a single device, otherwise it picks the first attribute with the right name it finds.
 
 <!-- next-url -->
-[Unreleased]: https://github.com/gourlaysama/biosctl/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/gourlaysama/biosctl/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/gourlaysama/biosctl/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/gourlaysama/biosctl/compare/757e73c...v0.1.0
