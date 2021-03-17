@@ -1,12 +1,11 @@
 use anyhow::*;
 use biosctl::{
     cli::{Command, ProgramOptions},
-    Attribute, AttributeType, Authentication, AuthenticationRole,
+    Attribute, AttributeType, AuthenticationRole, Device,
 };
 use std::{
     ffi::OsStr,
     io::{stdout, Write},
-    path::PathBuf,
 };
 use structopt::StructOpt;
 
@@ -34,27 +33,14 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-fn attributes_from(name: &OsStr) -> Result<Vec<Attribute>> {
-    let mut path = PathBuf::from("/sys/class/firmware-attributes");
-    path.push(name);
-
-    biosctl::list_attributes(&path)
-}
-
-fn authentications_from(name: &OsStr) -> Result<Vec<Authentication>> {
-    let mut path = PathBuf::from("/sys/class/firmware-attributes");
-    path.push(name);
-
-    biosctl::list_authentications(&path)
-}
-
 fn device_info(name: &OsStr) -> Result<()> {
     println!("Device: {}", name.to_string_lossy());
+    let device = Device::from(name);
 
-    let attributes = attributes_from(name)?;
+    let attributes = device.attributes()?;
     println!("    {} attributes", attributes.len());
 
-    let auths = authentications_from(name)?;
+    let auths = device.authentications()?;
     if !auths.is_empty() {
         println!("\n    Authentication methods:");
     }
@@ -99,7 +85,8 @@ fn print_attribute_value(
 }
 
 fn get_attribute(device_name: &OsStr, name: &OsStr) -> Result<Option<Attribute>> {
-    let attributes = attributes_from(device_name)?;
+    let device = Device::from(device_name);
+    let attributes = device.attributes()?;
 
     for a in attributes {
         if a.name == name {
@@ -111,7 +98,8 @@ fn get_attribute(device_name: &OsStr, name: &OsStr) -> Result<Option<Attribute>>
 }
 
 fn list_device(name: &OsStr) -> Result<()> {
-    let attributes = attributes_from(name)?;
+    let device = Device::from(name);
+    let attributes = device.attributes()?;
 
     println!("Device: {}\n", name.to_string_lossy());
     for a in attributes {
@@ -122,7 +110,8 @@ fn list_device(name: &OsStr) -> Result<()> {
 }
 
 fn print_device(name: &OsStr, attribute: Option<&OsStr>) -> Result<()> {
-    let attributes = attributes_from(name)?;
+    let device = Device::from(name);
+    let attributes = device.attributes()?;
 
     if let Some(attribute) = attribute {
         if let Some(a) = attributes.iter().find(|a| a.name == attribute) {
