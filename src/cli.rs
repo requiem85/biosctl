@@ -2,7 +2,7 @@ use std::ffi::OsString;
 use structopt::StructOpt;
 
 #[derive(StructOpt, Debug)]
-#[structopt(about = "Manage dell BIOS/EFI settings")]
+#[structopt(about = "Manage Dell BIOS/EFI settings")]
 pub struct ProgramOptions {
     #[structopt(long, short = "D", default_value("dell-wmi-sysman".into()))]
     pub device_name: OsString,

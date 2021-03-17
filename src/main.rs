@@ -1,5 +1,5 @@
 use anyhow::*;
-use firmconfig::{
+use biosctl::{
     cli::{Command, ProgramOptions},
     Attribute, AttributeType, Authentication, AuthenticationRole,
 };
@@ -38,14 +38,14 @@ fn attributes_from(name: &OsStr) -> Result<Vec<Attribute>> {
     let mut path = PathBuf::from("/sys/class/firmware-attributes");
     path.push(name);
 
-    firmconfig::list_attributes(&path)
+    biosctl::list_attributes(&path)
 }
 
 fn authentications_from(name: &OsStr) -> Result<Vec<Authentication>> {
     let mut path = PathBuf::from("/sys/class/firmware-attributes");
     path.push(name);
 
-    firmconfig::list_authentications(&path)
+    biosctl::list_authentications(&path)
 }
 
 fn device_info(name: &OsStr) -> Result<()> {

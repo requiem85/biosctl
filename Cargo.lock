@@ -7,6 +7,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "afddf7f520a80dbf76e6f50a35bca42a2331ef227a28b3b6dc5c2e2338d114b1"
 
 [[package]]
+name = "biosctl"
+version = "0.2.0-dev"
+dependencies = [
+ "anyhow",
+ "structopt",
+]
+
+[[package]]
 name = "bitflags"
 version = "1.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -22,14 +30,6 @@ dependencies = [
  "strsim",
  "textwrap",
  "unicode-width",
-]
-
-[[package]]
-name = "firmconfig"
-version = "0.2.0-dev"
-dependencies = [
- "anyhow",
- "structopt",
 ]
 
 [[package]]

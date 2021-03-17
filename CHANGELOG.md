@@ -1,10 +1,20 @@
 # Changelog
 
-**firmconfig** is a command line tool to display firmware configuration attributes exposed by the Linux (5.11+) kernel.
+**biosctl** is a command line tool to manage Dell BIOS/EFI settings on Linux 5.11+.
 
 <!-- next-header -->
 ## [Unreleased] - TBD
 
+### Added
+
+* A `get` subcommand to get the value of a setting, with `-d/--default` and `-n/--name` to get the default value or display name instead.
+* An `info` subcommand to display global information about the BIOS/EFI device.
+
+### Changed
+
+* Renamed from `firmconfig` to `biosctl`.
+* Refactored to only use a single device at a time, with `dell-wmi-sysman` the default.
+* Renamed the short option for `--device-name` from `-d` to `-D` and moved it to the top level.
 
 ## [0.1.0] - 2021-03-12
 
@@ -15,5 +25,5 @@
 * Both subcommands take a `-d/--device-name` to restrict the search to a single device, otherwise it picks the first attribute with the right name it finds.
 
 <!-- next-url -->
-[Unreleased]: https://github.com/gourlaysama/firmconfig/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/gourlaysama/firmconfig/compare/757e73c...v0.1.0
+[Unreleased]: https://github.com/gourlaysama/biosctl/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/gourlaysama/biosctl/compare/757e73c...v0.1.0
