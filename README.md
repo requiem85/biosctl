@@ -23,6 +23,13 @@ $ biosctl print WakeOnAc
 $ biosctl print # print all attributes
 ```
 
+Get values directly with the `get` subcommand:
+```sh
+$ sudo biosctl get VtForDirectIo
+```
+
+It may be necessary to run with `sudo` to be able to show the current value.
+
 Example output:
 
 ```sh
@@ -38,9 +45,13 @@ WakeOnAc
 
     Current value: Disabled
     Default value: Disabled
+$ biosctl get --name VtForDirectIo
+Enable Intel VT for Direct I/O
+$ biosctl get --default VtForDirectIo
+Enabled
+$ sudo biosctl get VtForDirectIo
+Enabled
 ```
-
-It may be necessary to run with `sudo` to be able to show the current value.
 
 ## Background
 
@@ -52,7 +63,7 @@ On Dell systems this is used to exposes all the BIOS/EFI configuration to usersp
 
 biosctl is written in Rust, so you need a [Rust install] to build it. biosctl compiles with Rust 1.50 or newer.
 
-Build it from source with:
+Build the latest release (0.1.0) from source with:
 
 ```sh
 $ git clone https://github.com/gourlaysama/biosctl -b v0.1.0
