@@ -6,6 +6,13 @@
 
 Precompiled binaries are available on the [Release Page] for x86_64 Linux (statically linked).
 
+If you are a **Fedora** (32+) user, you can install biosctl with:
+
+```sh
+sudo dnf copr enable gourlaysama/biosctl
+sudo dnf install biosctl
+```
+
 Otherwise you will need to [build from source](#building-from-source).
 
 ## Usage
