@@ -133,6 +133,18 @@ impl Device {
 
         Ok(attributes)
     }
+
+    pub fn modified(&self) -> Result<bool> {
+        let mut attributes_path = PathBuf::from(&self.path);
+        attributes_path.push("attributes");
+
+        let v: u8 = read_value(attributes_path, OsStr::new("pending_reboot"))?.parse()?;
+
+        match v {
+            1 => Ok(true),
+            _ => Ok(false),
+        }
+    }
 }
 
 #[derive(Debug)]

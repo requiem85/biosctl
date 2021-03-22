@@ -48,6 +48,10 @@ fn device_info(name: &OsStr) -> Result<()> {
     let attributes = device.attributes()?;
     println!("    {} attributes", attributes.len());
 
+    if device.modified()? {
+        println!("\n    Reboot pending: configuration was modified!");
+    }
+
     let auths = device.authentications()?;
     if !auths.is_empty() {
         println!("\n    Authentication methods:");
