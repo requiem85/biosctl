@@ -53,6 +53,16 @@ $ sudo biosctl get VtForDirectIo
 Enabled
 ```
 
+Set values with the `set` subcommand:
+
+```sh
+$ sudo biosctl get WakeOnDock
+Enabled
+$ sudo biosctl set WakeOnDock Disabled
+$ sudo biosctl get WakeOnDock
+Disabled
+```
+
 ## Background
 
 Since Linux 5.11, the kernel can expose [firmware configuration attributes] under `/sys/class/firmware-attributes`.
