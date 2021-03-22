@@ -5,6 +5,11 @@
 <!-- next-header -->
 ## [Unreleased] - TBD
 
+### Added
+
+* A `set` subcommand to set the value of a setting.
+* The `info` subcommand now shows if a reboot is pending.
+
 
 ## [0.2.0] - 2021-03-17
 
