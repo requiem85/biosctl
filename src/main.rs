@@ -30,7 +30,7 @@ fn main() -> Result<()> {
         }
         Command::Set { attribute, value } => {
             let device = Device::from(&options.device_name);
-            if let Some(mut attr) = get_attribute(&device, &attribute)? {
+            if let Some(mut attr) = device.attribute(&attribute)? {
                 attr.set_value(&value)?;
             } else {
                 bail!("no setting with name '{}'", attribute.to_string_lossy());
@@ -46,14 +46,14 @@ fn device_info(name: &OsStr) -> Result<()> {
     let device = Device::from(name);
 
     let attributes = device.attributes()?;
-    println!("    {} attributes", attributes.len());
+    println!("    {} attributes", attributes.count());
 
     if device.modified()? {
         println!("\n    Reboot pending: configuration was modified!");
     }
 
-    let auths = device.authentications()?;
-    if !auths.is_empty() {
+    let mut auths = device.authentications()?.peekable();
+    if auths.peek().is_some() {
         println!("\n    Authentication methods:");
     }
     for a in auths {
@@ -79,7 +79,7 @@ fn print_attribute_value(
     name: bool,
 ) -> Result<(), Error> {
     let device = Device::from(device_name);
-    if let Some(a) = get_attribute(&device, attribute)? {
+    if let Some(a) = device.attribute(attribute)? {
         if default {
             if let Ok(d) = a.default_value {
                 println!("{}", d);
@@ -97,18 +97,6 @@ fn print_attribute_value(
     Ok(())
 }
 
-fn get_attribute<'a>(device: &'a Device, name: &OsStr) -> Result<Option<Attribute<'a>>> {
-    let attributes = device.attributes()?;
-
-    for a in attributes {
-        if a.name == name {
-            return Ok(Some(a));
-        }
-    }
-
-    Err(anyhow!("no attribute with name {}", name.to_string_lossy()))
-}
-
 fn list_device(name: &OsStr) -> Result<()> {
     let device = Device::from(name);
     let attributes = device.attributes()?;
@@ -123,10 +111,10 @@ fn list_device(name: &OsStr) -> Result<()> {
 
 fn print_device(name: &OsStr, attribute: Option<&OsStr>) -> Result<()> {
     let device = Device::from(name);
-    let attributes = device.attributes()?;
+    let mut attributes = device.attributes()?;
 
     if let Some(attribute) = attribute {
-        if let Some(a) = attributes.iter().find(|a| a.name == attribute) {
+        if let Some(a) = attributes.find(|a| a.name == attribute) {
             println!("Device: {}\n", name.to_string_lossy());
             print_attribute(&a)?;
             return Ok(());
