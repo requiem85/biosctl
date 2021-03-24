@@ -3,6 +3,8 @@ use biosctl::{
     cli::{Command, ProgramOptions},
     Attribute, AttributeType, AuthenticationRole, Device,
 };
+use env_logger::{Builder, Env};
+use log::*;
 use std::{
     ffi::OsStr,
     io::{stdout, Write},
@@ -11,6 +13,27 @@ use structopt::StructOpt;
 
 fn main() -> Result<()> {
     let options = ProgramOptions::from_args();
+
+    let mut b = Builder::from_env(Env::from("BIOSCTL_LOG"));
+    b.format_timestamp(None);
+    if let Some(level) = options.log_level_with_default(2) {
+        b.filter_level(level);
+    };
+    b.try_init()?;
+
+    std::process::exit(match run(options) {
+        Ok(()) => 0,
+        Err(e) => {
+            println!("Error: {}", e);
+            for cause in e.chain().skip(1) {
+                info!("cause: {}", cause);
+            }
+            1
+        }
+    })
+}
+
+fn run(options: ProgramOptions) -> Result<()> {
     match options.cmd {
         Command::Print { attribute } => {
             print_device(&options.device_name, attribute.as_deref())?;
@@ -42,6 +65,8 @@ fn main() -> Result<()> {
 }
 
 fn device_info(name: &OsStr) -> Result<()> {
+    trace!("printing info for device {:?}", name);
+
     println!("Device: {}", name.to_string_lossy());
     let device = Device::from(name);
 
@@ -55,6 +80,11 @@ fn device_info(name: &OsStr) -> Result<()> {
     let mut auths = device.authentications()?.peekable();
     if auths.peek().is_some() {
         println!("\n    Authentication methods:");
+    } else {
+        warn!(
+            "no authentications methods found for device '{}'",
+            name.to_string_lossy()
+        );
     }
     for a in auths {
         println!("        {}", a.name.to_string_lossy());
@@ -78,6 +108,14 @@ fn print_attribute_value(
     default: bool,
     name: bool,
 ) -> Result<(), Error> {
+    trace!(
+        "printing content of attribute {:?} (device={:?}, default={}, name={})",
+        attribute,
+        device_name,
+        default,
+        name
+    );
+
     let device = Device::from(device_name);
     if let Some(a) = device.attribute(attribute)? {
         if default {
@@ -93,11 +131,15 @@ fn print_attribute_value(
         } else {
             println!("<Access Denied>");
         }
+        Ok(())
+    } else {
+        bail!("no attribute with name {}", attribute.to_string_lossy());
     }
-    Ok(())
 }
 
 fn list_device(name: &OsStr) -> Result<()> {
+    trace!("listing attributes in device {:?}", name);
+
     let device = Device::from(name);
     let attributes = device.attributes()?;
 
@@ -110,10 +152,12 @@ fn list_device(name: &OsStr) -> Result<()> {
 }
 
 fn print_device(name: &OsStr, attribute: Option<&OsStr>) -> Result<()> {
+    trace!("printing device {:?}", name);
     let device = Device::from(name);
     let mut attributes = device.attributes()?;
 
     if let Some(attribute) = attribute {
+        trace!("filtering by attribute: {:?}", attribute);
         if let Some(a) = attributes.find(|a| a.name == attribute) {
             println!("Device: {}\n", name.to_string_lossy());
             print_attribute(&a)?;

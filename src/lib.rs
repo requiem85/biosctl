@@ -1,6 +1,7 @@
 pub mod cli;
 
 use anyhow::*;
+use log::*;
 use std::{
     ffi::{OsStr, OsString},
     os::unix::ffi::OsStrExt,
@@ -28,18 +29,56 @@ impl Device {
         let mut auth_path = PathBuf::from(&self.path);
         auth_path.push("authentication");
 
+        debug!("reading device authentication path {:?}", auth_path);
+
         Ok(auth_path
-            .read_dir()?
-            .filter_map(|d| make_authentication(d).ok()))
+            .read_dir()
+            .with_context(|| {
+                format!(
+                    "failed to read authentications for device at path '{}'",
+                    self.path.to_string_lossy()
+                )
+            })?
+            .filter_map(|d| {
+                make_authentication(d).map_or_else(
+                    |e| {
+                        warn!("skipping authentication with error: {}", e);
+                        for cause in e.chain().skip(1) {
+                            info!("cause: {}", cause);
+                        }
+                        None
+                    },
+                    Some,
+                )
+            }))
     }
 
     pub fn attributes(&self) -> Result<impl Iterator<Item = Attribute>> {
         let mut attributes_path = PathBuf::from(&self.path);
         attributes_path.push("attributes");
 
+        debug!("reading device attribute path {:?}", attributes_path);
+
         Ok(attributes_path
-            .read_dir()?
-            .filter_map(move |d| self.make_attribute(d).ok()))
+            .read_dir()
+            .with_context(|| {
+                format!(
+                    "failed to read attributes for device at path '{}'",
+                    self.path.to_string_lossy()
+                )
+            })?
+            .filter_map(move |d| {
+                self.make_attribute(d).map_or_else(
+                    |e| {
+                        warn!("skipping attribute with error: {}", e);
+                        for cause in e.chain().skip(1) {
+                            info!("cause: {}", cause);
+                        }
+                        None
+                    },
+                    Some,
+                )
+            }))
     }
 
     pub fn attribute(&self, name: &OsStr) -> Result<Option<Attribute>> {
@@ -49,70 +88,78 @@ impl Device {
     }
 
     fn make_attribute(&self, d: Result<std::fs::DirEntry, std::io::Error>) -> Result<Attribute> {
-        if let Ok(d) = d {
-            if d.file_type()?.is_dir() {
-                let name = d.file_name();
-                let current_value = read_value(d.path(), OsStr::new("current_value"));
-                let default_value = read_value(d.path(), OsStr::new("default_value"));
+        match d {
+            Ok(d) => {
+                if d.file_type()?.is_dir() {
+                    let name = d.file_name();
+                    let current_value = read_value(d.path(), OsStr::new("current_value"));
+                    let default_value = read_value(d.path(), OsStr::new("default_value"));
 
-                let display_name = read_value(d.path(), OsStr::new("display_name"))?;
-                let display_name_lang =
-                    read_value(d.path(), OsStr::new("display_name_language_code"))?;
+                    let display_name = read_value(d.path(), OsStr::new("display_name"))?;
+                    let display_name_lang =
+                        read_value(d.path(), OsStr::new("display_name_language_code"))?;
 
-                let tpe_name = read_value(d.path(), OsStr::new("type"))?;
-                let tpe = match tpe_name.as_ref() {
-                    "enumeration" => {
-                        let p_value_string = read_value(d.path(), OsStr::new("possible_values"))?;
-                        let mut p_values = Vec::new();
-                        for v in p_value_string.split(';') {
-                            p_values.push(v.to_string());
+                    let tpe_name = read_value(d.path(), OsStr::new("type"))?;
+                    let tpe = match tpe_name.as_ref() {
+                        "enumeration" => {
+                            let p_value_string =
+                                read_value(d.path(), OsStr::new("possible_values"))?;
+                            let mut p_values = Vec::new();
+                            for v in p_value_string.split(';') {
+                                p_values.push(v.to_string());
+                            }
+                            AttributeType::Enumeration {
+                                possible_values: p_values,
+                            }
                         }
-                        AttributeType::Enumeration {
-                            possible_values: p_values,
+                        "integer" => {
+                            let min: i64 =
+                                read_value(d.path(), OsStr::new("min_value"))?.parse()?;
+                            let max: i64 =
+                                read_value(d.path(), OsStr::new("max_value"))?.parse()?;
+                            let step: u64 =
+                                read_value(d.path(), OsStr::new("scalar_increment"))?.parse()?;
+
+                            AttributeType::Integer { min, max, step }
                         }
-                    }
-                    "integer" => {
-                        let min: i64 = read_value(d.path(), OsStr::new("min_value"))?.parse()?;
-                        let max: i64 = read_value(d.path(), OsStr::new("max_value"))?.parse()?;
-                        let step: u64 =
-                            read_value(d.path(), OsStr::new("scalar_increment"))?.parse()?;
+                        "string" => {
+                            let min_length: u64 =
+                                read_value(d.path(), OsStr::new("min_length"))?.parse()?;
+                            let max_length: u64 =
+                                read_value(d.path(), OsStr::new("min_length"))?.parse()?;
 
-                        AttributeType::Integer { min, max, step }
-                    }
-                    "string" => {
-                        let min_length: u64 =
-                            read_value(d.path(), OsStr::new("min_length"))?.parse()?;
-                        let max_length: u64 =
-                            read_value(d.path(), OsStr::new("min_length"))?.parse()?;
-
-                        AttributeType::String {
-                            min_length,
-                            max_length,
+                            AttributeType::String {
+                                min_length,
+                                max_length,
+                            }
                         }
-                    }
-                    a => {
-                        bail!("Unknown attribute type: '{}'", a)
-                    }
-                };
+                        a => {
+                            bail!("Unknown attribute type: '{}'", a)
+                        }
+                    };
 
-                return Ok(Attribute {
-                    device: self,
-                    name,
-                    tpe,
-                    current_value,
-                    default_value,
-                    display_name,
-                    display_name_lang,
-                });
+                    Ok(Attribute {
+                        device: self,
+                        name,
+                        tpe,
+                        current_value,
+                        default_value,
+                        display_name,
+                        display_name_lang,
+                    })
+                } else {
+                    Err(anyhow!("attribute isn't a directory"))
+                }
             }
+            Err(e) => Err(e).context("error iterating attributes"),
         }
-
-        bail!("error in parsing attribute entry")
     }
 
     pub fn modified(&self) -> Result<bool> {
         let mut attributes_path = PathBuf::from(&self.path);
         attributes_path.push("attributes");
+
+        debug!("reading device attribute path {:?}", attributes_path);
 
         let v: u8 = read_value(attributes_path, OsStr::new("pending_reboot"))?.parse()?;
 
@@ -124,34 +171,37 @@ impl Device {
 }
 
 fn make_authentication(d: Result<std::fs::DirEntry, std::io::Error>) -> Result<Authentication> {
-    if let Ok(d) = d {
-        if d.file_type()?.is_dir() {
-            let name = d.file_name();
-            let is_enabled = !matches!(
-                read_value(d.path(), OsStr::new("is_enabled"))?.as_ref(),
-                "0"
-            );
-            let min_password_length =
-                read_value(d.path(), OsStr::new("min_password_length"))?.parse()?;
-            let max_password_length =
-                read_value(d.path(), OsStr::new("max_password_length"))?.parse()?;
-            let role = match read_value(d.path(), OsStr::new("role"))?.as_ref() {
-                "bios-admin" => AuthenticationRole::BiosAdmin,
-                "power-on" => AuthenticationRole::PowerOn,
-                a => AuthenticationRole::Unknown(a.to_string()),
-            };
+    match d {
+        Ok(d) => {
+            if d.file_type()?.is_dir() {
+                let name = d.file_name();
+                let is_enabled = !matches!(
+                    read_value(d.path(), OsStr::new("is_enabled"))?.as_ref(),
+                    "0"
+                );
+                let min_password_length =
+                    read_value(d.path(), OsStr::new("min_password_length"))?.parse()?;
+                let max_password_length =
+                    read_value(d.path(), OsStr::new("max_password_length"))?.parse()?;
+                let role = match read_value(d.path(), OsStr::new("role"))?.as_ref() {
+                    "bios-admin" => AuthenticationRole::BiosAdmin,
+                    "power-on" => AuthenticationRole::PowerOn,
+                    a => AuthenticationRole::Unknown(a.to_string()),
+                };
 
-            return Ok(Authentication {
-                name,
-                is_enabled,
-                min_password_length,
-                max_password_length,
-                role,
-            });
+                Ok(Authentication {
+                    name,
+                    is_enabled,
+                    min_password_length,
+                    max_password_length,
+                    role,
+                })
+            } else {
+                Err(anyhow!("authentication isn't a directory"))
+            }
         }
+        Err(e) => Err(e).context("error iterating authentications"),
     }
-
-    bail!("error in parsing authentication entry");
 }
 
 #[derive(Debug)]
@@ -171,6 +221,8 @@ impl<'a> Attribute<'a> {
         p.push("attributes");
         p.push(&self.name);
         p.push("current_value");
+
+        debug!("writing value {:?} to attribute {:?}", value, p);
 
         std::fs::write(&p, value.as_bytes())?;
 
@@ -206,7 +258,8 @@ pub enum AuthenticationRole {
 fn read_value(path: PathBuf, name: &OsStr) -> Result<String> {
     let mut p = path;
     p.push(name);
-    let mut v = std::fs::read_to_string(p)?;
+    let mut v = std::fs::read_to_string(p)
+        .with_context(|| format!("failed to read value '{}'", name.to_string_lossy()))?;
     v = v.trim_end().to_string();
 
     Ok(v)

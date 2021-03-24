@@ -7,6 +7,12 @@ license = "MIT"
 
 [dependencies]
 anyhow = "1"
+log = "0.4"
+
+[dependencies.env_logger]
+version = "0.8"
+default-features = false
+features = ["atty", "termcolor"]
 
 [dependencies.structopt]
 version = '0.3'
