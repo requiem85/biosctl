@@ -40,16 +40,13 @@ impl Device {
                 )
             })?
             .filter_map(|d| {
-                make_authentication(d).map_or_else(
-                    |e| {
-                        warn!("skipping authentication with error: {}", e);
-                        for cause in e.chain().skip(1) {
-                            info!("cause: {}", cause);
-                        }
-                        None
-                    },
-                    Some,
-                )
+                make_authentication(d).unwrap_or_else(|e| {
+                    warn!("skipping authentication with error: {}", e);
+                    for cause in e.chain().skip(1) {
+                        info!("cause: {}", cause);
+                    }
+                    None
+                })
             }))
     }
 
@@ -68,16 +65,13 @@ impl Device {
                 )
             })?
             .filter_map(move |d| {
-                self.make_attribute(d).map_or_else(
-                    |e| {
-                        warn!("skipping attribute with error: {}", e);
-                        for cause in e.chain().skip(1) {
-                            info!("cause: {}", cause);
-                        }
-                        None
-                    },
-                    Some,
-                )
+                self.make_attribute(d).unwrap_or_else(|e| {
+                    warn!("skipping attribute with error: {}", e);
+                    for cause in e.chain().skip(1) {
+                        info!("cause: {}", cause);
+                    }
+                    None
+                })
             }))
     }
 
@@ -87,7 +81,10 @@ impl Device {
         Ok(attributes.find(|a| a.name == name))
     }
 
-    fn make_attribute(&self, d: Result<std::fs::DirEntry, std::io::Error>) -> Result<Attribute> {
+    fn make_attribute(
+        &self,
+        d: Result<std::fs::DirEntry, std::io::Error>,
+    ) -> Result<Option<Attribute>> {
         match d {
             Ok(d) => {
                 if d.file_type()?.is_dir() {
@@ -138,7 +135,7 @@ impl Device {
                         }
                     };
 
-                    Ok(Attribute {
+                    Ok(Some(Attribute {
                         device: self,
                         name,
                         tpe,
@@ -146,9 +143,11 @@ impl Device {
                         default_value,
                         display_name,
                         display_name_lang,
-                    })
+                    }))
                 } else {
-                    Err(anyhow!("attribute isn't a directory"))
+                    // non-directories are probably top-level configs
+                    trace!("ignoring non-directory '{}'", d.path().to_string_lossy());
+                    Ok(None)
                 }
             }
             Err(e) => Err(e).context("error iterating attributes"),
@@ -170,7 +169,9 @@ impl Device {
     }
 }
 
-fn make_authentication(d: Result<std::fs::DirEntry, std::io::Error>) -> Result<Authentication> {
+fn make_authentication(
+    d: Result<std::fs::DirEntry, std::io::Error>,
+) -> Result<Option<Authentication>> {
     match d {
         Ok(d) => {
             if d.file_type()?.is_dir() {
@@ -189,15 +190,17 @@ fn make_authentication(d: Result<std::fs::DirEntry, std::io::Error>) -> Result<A
                     a => AuthenticationRole::Unknown(a.to_string()),
                 };
 
-                Ok(Authentication {
+                Ok(Some(Authentication {
                     name,
                     is_enabled,
                     min_password_length,
                     max_password_length,
                     role,
-                })
+                }))
             } else {
-                Err(anyhow!("authentication isn't a directory"))
+                // non-directories are probably top-level configs
+                trace!("ignoring non-directory '{}'", d.path().to_string_lossy());
+                Ok(None)
             }
         }
         Err(e) => Err(e).context("error iterating authentications"),
