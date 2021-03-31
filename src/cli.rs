@@ -70,4 +70,5 @@ pub enum Command {
         value: OsString,
     },
     Info,
+    NeedsReboot,
 }
