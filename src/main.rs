@@ -11,6 +11,8 @@ use std::{
 };
 use structopt::StructOpt;
 
+type ReturnCode = i32;
+
 fn main() -> Result<()> {
     let options = ProgramOptions::from_args();
 
@@ -22,7 +24,7 @@ fn main() -> Result<()> {
     b.try_init()?;
 
     std::process::exit(match run(options) {
-        Ok(()) => 0,
+        Ok(i) => i,
         Err(e) => {
             println!("Error: {}", e);
             for cause in e.chain().skip(1) {
@@ -33,7 +35,7 @@ fn main() -> Result<()> {
     })
 }
 
-fn run(options: ProgramOptions) -> Result<()> {
+fn run(options: ProgramOptions) -> Result<ReturnCode> {
     match options.cmd {
         Command::Print { attribute } => {
             print_device(&options.device_name, attribute.as_deref())?;
@@ -59,9 +61,18 @@ fn run(options: ProgramOptions) -> Result<()> {
                 bail!("no setting with name '{}'", attribute.to_string_lossy());
             }
         }
+        Command::NeedsReboot => {
+            let device = Device::from(&options.device_name);
+            if device.modified()? {
+                println!("true");
+            } else {
+                println!("false");
+                return Ok(1);
+            }
+        }
     }
 
-    Ok(())
+    Ok(0)
 }
 
 fn device_info(name: &OsStr) -> Result<()> {
