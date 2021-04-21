@@ -5,6 +5,12 @@
 <!-- next-header -->
 ## [Unreleased] - TBD
 
+### Added
+
+* A `needs-reboot` subcommand now shows if the BIOS/EFI confguration has been changed and a reboot is needed.
+* Better logging, with `-v/--verbose` and `-q/--quiet` options to control logging output.
+
+### Fixed
 
 ## [0.3.0] - 2021-03-22
 
