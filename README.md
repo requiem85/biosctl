@@ -80,14 +80,14 @@ On Dell systems this is used to exposes all the BIOS/EFI configuration to usersp
 
 biosctl is written in Rust, so you need a [Rust install] to build it. biosctl compiles with Rust 1.50 or newer.
 
-Build the latest release (0.3.0) from source with:
+Build the latest release (0.3.1) from source with:
 
 ```sh
-$ git clone https://github.com/gourlaysama/biosctl -b v0.3.0
+$ git clone https://github.com/gourlaysama/biosctl -b v0.3.1
 $ cd biosctl
 $ cargo build --release
 $ ./target/release/biosctl --version
-biosctl 0.3.0
+biosctl 0.3.1
 
 ```
 
