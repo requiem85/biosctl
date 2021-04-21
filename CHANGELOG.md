@@ -5,6 +5,9 @@
 <!-- next-header -->
 ## [Unreleased] - TBD
 
+
+## [0.3.1] - 2021-04-21
+
 ### Added
 
 * A `needs-reboot` subcommand now shows if the BIOS/EFI confguration has been changed and a reboot is needed.
@@ -42,7 +45,8 @@
 * Both subcommands take a `-d/--device-name` to restrict the search to a single device, otherwise it picks the first attribute with the right name it finds.
 
 <!-- next-url -->
-[Unreleased]: https://github.com/gourlaysama/biosctl/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/gourlaysama/biosctl/compare/v0.3.1...HEAD
+[0.3.1]: https://github.com/gourlaysama/biosctl/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/gourlaysama/biosctl/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/gourlaysama/biosctl/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/gourlaysama/biosctl/compare/757e73c...v0.1.0
