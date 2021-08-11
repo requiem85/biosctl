@@ -10,7 +10,7 @@ anyhow = "1"
 log = "0.4"
 
 [dependencies.env_logger]
-version = "0.8"
+version = "0.9"
 default-features = false
 features = ["atty", "termcolor"]
 
