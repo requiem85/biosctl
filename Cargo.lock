@@ -27,6 +27,7 @@ dependencies = [
  "env_logger",
  "log",
  "structopt",
+ "version_check",
 ]
 
 [[package]]
