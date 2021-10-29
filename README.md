@@ -78,7 +78,7 @@ On Dell systems this is used to exposes all the BIOS/EFI configuration to usersp
 
 ## Building from source
 
-biosctl is written in Rust, so you need a [Rust install] to build it. biosctl compiles with Rust 1.50 or newer.
+biosctl is written in Rust, so you need a [Rust install] to build it. biosctl compiles with Rust 1.52 or newer.
 
 Build the latest release (0.3.1) from source with:
 
