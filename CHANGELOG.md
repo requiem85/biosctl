@@ -5,6 +5,12 @@
 <!-- next-header -->
 ## [Unreleased] - TBD
 
+### Packaging
+
+* The Minimum Supported Rust Version for biosctl is now 1.52.
+
+### Changes
+
 * `--version` output now shows more build information.
 
 ## [0.3.1] - 2021-04-21
