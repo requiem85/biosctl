@@ -3,13 +3,20 @@ use std::ffi::OsString;
 use structopt::StructOpt;
 
 #[derive(StructOpt, Debug)]
-#[structopt(about = "Manage Dell BIOS/EFI settings")]
+#[structopt(
+    about = "Manage Dell BIOS/EFI settings",
+    setting = structopt::clap::AppSettings::DisableVersion,
+)]
 pub struct ProgramOptions {
     #[structopt(long, short = "D", default_value("dell-wmi-sysman".into()))]
     pub device_name: OsString,
 
     #[structopt(subcommand)]
-    pub cmd: Command,
+    pub cmd: Option<Command>,
+
+    /// Prints version information.
+    #[structopt(short = "V", long = "version")]
+    pub version: bool,
 
     #[structopt(long, short, global = true, parse(from_occurrences))]
     verbose: i8,

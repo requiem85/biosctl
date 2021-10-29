@@ -14,7 +14,22 @@ use structopt::StructOpt;
 type ReturnCode = i32;
 
 fn main() -> Result<()> {
-    let options = ProgramOptions::from_args();
+    let options_matches = ProgramOptions::clap().get_matches();
+    let options = ProgramOptions::from_clap(&options_matches);
+
+    if options.version {
+        // HACK to disambiguate short/long invocations for the same cli option;
+        // there has to be a better way of doing this...
+        let i = options_matches
+            .index_of("version")
+            .ok_or_else(|| anyhow!("should never happen: version set yet no version flag"))?;
+        if std::env::args().nth(i).unwrap_or_default() == "-V" {
+            print_version(false);
+        } else {
+            print_version(true);
+        }
+        return Ok(());
+    }
 
     let mut b = Builder::from_env(Env::from("BIOSCTL_LOG"));
     b.format_timestamp(None);
@@ -22,6 +37,11 @@ fn main() -> Result<()> {
         b.filter_level(level);
     };
     b.try_init()?;
+
+    if options.cmd.is_none() {
+        ProgramOptions::clap().print_help()?;
+        std::process::exit(1);
+    }
 
     std::process::exit(match run(options) {
         Ok(i) => i,
@@ -36,7 +56,8 @@ fn main() -> Result<()> {
 }
 
 fn run(options: ProgramOptions) -> Result<ReturnCode> {
-    match options.cmd {
+    let cmd = options.cmd.ok_or_else(|| anyhow!("should never happen: no command"))?;
+    match cmd {
         Command::Print { attribute } => {
             print_device(&options.device_name, attribute.as_deref())?;
         }
@@ -233,4 +254,18 @@ fn print_attribute(a: &Attribute) -> Result<()> {
     }
 
     Ok(())
+}
+
+fn print_version(long: bool) {
+    if long {
+        println!(
+            "{} {} ({})",
+            env!("CARGO_PKG_NAME"),
+            env!("CARGO_PKG_VERSION"),
+            option_env!("BUILD_ID").unwrap_or("unknown")
+        );
+        println!("rustc {} ({})", env!("BUILD_RUSTC"), env!("BUILD_INFO"));
+    } else {
+        println!("{} {}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"));
+    }
 }

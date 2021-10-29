@@ -5,6 +5,7 @@
 <!-- next-header -->
 ## [Unreleased] - TBD
 
+* `--version` output now shows more build information.
 
 ## [0.3.1] - 2021-04-21
 
