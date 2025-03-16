@@ -69,6 +69,20 @@ $ sudo biosctl set WakeOnDock Disabled
 $ sudo biosctl get WakeOnDock
 Disabled
 ```
+If your BIOS is password-protected, supply the password using the global `--password` flag. This flag is available for all commands. When used, biosctl will:
+
+1. **Unlock BIOS Settings:** Write the provided password to the sysfs node at:  
+   `/sys/class/firmware-attributes/dell-wmi-sysman/authentication/Admin/current_password`
+
+2. **Perform the Operation:** Execute the requested command (e.g., setting an attribute).
+
+3. **Clear the Password:** Automatically clear the password from the sysfs node after completing the operation.
+
+For example:
+
+```sh
+sudo biosctl --password "your_bios_password" set WakeOnDock Disabled
+
 
 ## Background
 
