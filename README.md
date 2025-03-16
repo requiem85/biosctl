@@ -69,6 +69,8 @@ $ sudo biosctl set WakeOnDock Disabled
 $ sudo biosctl get WakeOnDock
 Disabled
 ```
+
+## Passwords
 If your BIOS is password-protected, supply the password using the global `--password` flag. This flag is available for all commands. When used, biosctl will:
 
 1. **Unlock BIOS Settings:** Write the provided password to the sysfs node at:  
