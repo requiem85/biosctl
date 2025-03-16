@@ -77,7 +77,6 @@ impl Device {
 
     pub fn attribute(&self, name: &OsStr) -> Result<Option<Attribute>> {
         let mut attributes = self.attributes()?;
-
         Ok(attributes.find(|a| a.name == name))
     }
 
@@ -145,7 +144,6 @@ impl Device {
                         display_name_lang,
                     }))
                 } else {
-                    // non-directories are probably top-level configs
                     trace!("ignoring non-directory '{}'", d.path().to_string_lossy());
                     Ok(None)
                 }
@@ -198,7 +196,6 @@ fn make_authentication(
                     role,
                 }))
             } else {
-                // non-directories are probably top-level configs
                 trace!("ignoring non-directory '{}'", d.path().to_string_lossy());
                 Ok(None)
             }

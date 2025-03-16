@@ -7,14 +7,43 @@ use env_logger::{Builder, Env};
 use log::*;
 use std::{
     ffi::OsStr,
+    fs,
     io::{stdout, Write},
+    process::exit,
 };
+// Bring the StructOpt trait into scope so that ProgramOptions::clap() and ::from_clap() work.
 use structopt::StructOpt;
+// Import Arg from structopt's clap module (clap v2.33.3)
+use structopt::clap::Arg;
+
+const ADMIN_PASSWORD_PATH: &str = "/sys/class/firmware-attributes/dell-wmi-sysman/authentication/Admin/current_password";
 
 type ReturnCode = i32;
 
+/// Writes the given password to the sysfs file to unlock BIOS settings.
+fn write_admin_password(password: &str) -> Result<()> {
+    fs::write(ADMIN_PASSWORD_PATH, password)
+        .with_context(|| format!("writing admin password to {}", ADMIN_PASSWORD_PATH))?;
+    Ok(())
+}
+
+/// Clears the admin password from the sysfs file.
+fn clear_admin_password() -> Result<()> {
+    fs::write(ADMIN_PASSWORD_PATH, "")
+        .with_context(|| format!("clearing admin password at {}", ADMIN_PASSWORD_PATH))?;
+    Ok(())
+}
+
 fn main() -> Result<()> {
-    let options_matches = ProgramOptions::clap().get_matches();
+    // Extend the existing ProgramOptions clap app with a new --password flag.
+    let mut app = ProgramOptions::clap();
+    app = app.arg(
+        Arg::with_name("password")
+            .long("password")
+            .help("BIOS admin password for authentication")
+            .takes_value(true),
+    );
+    let options_matches = app.get_matches();
     let options = ProgramOptions::from_clap(&options_matches);
 
     if options.version {
@@ -40,19 +69,45 @@ fn main() -> Result<()> {
 
     if options.cmd.is_none() {
         ProgramOptions::clap().print_help()?;
-        std::process::exit(1);
+        exit(1);
     }
 
-    std::process::exit(match run(options) {
+    // If a BIOS password was provided, unlock the BIOS by writing it to the sysfs node.
+    let password = options_matches.value_of("password");
+    if let Some(pwd) = password {
+        if let Err(e) = write_admin_password(pwd) {
+            eprintln!("Failed to unlock BIOS: {}", e);
+            exit(1);
+        }
+        println!("BIOS unlocked for changes.");
+    }
+
+    let retcode = match run(options) {
         Ok(i) => i,
         Err(e) => {
             println!("Error: {}", e);
             for cause in e.chain().skip(1) {
                 info!("cause: {}", cause);
             }
-            1
+            // Attempt to clear the password even if an error occurred.
+            if password.is_some() {
+                if let Err(e) = clear_admin_password() {
+                    eprintln!("Failed to clear BIOS password: {}", e);
+                }
+            }
+            exit(1);
         }
-    })
+    };
+
+    // Clear the BIOS password if one was used.
+    if password.is_some() {
+        if let Err(e) = clear_admin_password() {
+            eprintln!("Failed to clear BIOS password: {}", e);
+            exit(1);
+        }
+        println!("BIOS password cleared.");
+    }
+    exit(retcode)
 }
 
 fn run(options: ProgramOptions) -> Result<ReturnCode> {
@@ -123,7 +178,7 @@ fn device_info(name: &OsStr) -> Result<()> {
         let role = match a.role {
             AuthenticationRole::BiosAdmin => "Change BIOS Settings".to_string(),
             AuthenticationRole::PowerOn => "Power on computer".to_string(),
-            AuthenticationRole::Unknown(a) => format!("Unkown role ({})", a),
+            AuthenticationRole::Unknown(a) => format!("Unknown role ({})", a),
         };
         println!("            Role: {}", role);
 

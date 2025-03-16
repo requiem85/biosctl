@@ -5,10 +5,10 @@ use structopt::StructOpt;
 #[derive(StructOpt, Debug)]
 #[structopt(
     about = "Manage Dell BIOS/EFI settings",
-    setting = structopt::clap::AppSettings::DisableVersion,
+    setting = structopt::clap::AppSettings::DisableVersion
 )]
 pub struct ProgramOptions {
-    #[structopt(long, short = "D", default_value("dell-wmi-sysman".into()))]
+    #[structopt(long, short = "D", default_value = "dell-wmi-sysman")]
     pub device_name: OsString,
 
     #[structopt(subcommand)]
@@ -30,6 +30,10 @@ pub struct ProgramOptions {
         conflicts_with = "verbose"
     )]
     quiet: i8,
+
+    /// BIOS admin password for authentication
+    #[structopt(long, global = true)]
+    pub password: Option<String>,
 }
 
 impl ProgramOptions {
@@ -63,7 +67,7 @@ pub enum Command {
         #[structopt(long, short)]
         default: bool,
 
-        #[structopt(long, short, conflicts_with("default"))]
+        #[structopt(long, short, conflicts_with = "default")]
         name: bool,
 
         #[structopt(name = "SETTING")]
