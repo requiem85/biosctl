@@ -82,6 +82,7 @@ For example:
 
 ```sh
 sudo biosctl --password "your_bios_password" set WakeOnDock Disabled
+```
 
 
 ## Background
