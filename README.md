@@ -111,6 +111,17 @@ biosctl 0.3.2
 
 ```
 
+
+
+## Future Implementations 
+
+Handling multiple types of password authorizations, like using system password
+
+Handling PPI commands for clearing TPM 
+
+
+
+
 #### License
 
 <sub>
@@ -128,3 +139,6 @@ without any additional terms or conditions.
 [Rust install]: https://www.rust-lang.org/tools/install
 [firmware configuration attributes]: https://www.kernel.org/doc/html/v5.11/admin-guide/abi-testing.html#abi-sys-class-firmware-attributes-attributes
 [Release Page]: https://github.com/gourlaysama/biosctl/releases/latest
+
+
+
