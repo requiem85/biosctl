@@ -4,14 +4,6 @@
 
 ## Installation
 
-Precompiled binaries are available on the [Release Page] for x86_64 Linux (statically linked).
-
-If you are a **Fedora** (32+) user, you can install biosctl with:
-
-```sh
-sudo dnf copr enable gourlaysama/biosctl
-sudo dnf install biosctl
-```
 
 Otherwise you will need to [build from source](#building-from-source).
 
@@ -103,7 +95,7 @@ biosctl is written in Rust, so you need a [Rust install] to build it. biosctl co
 Build the latest release (0.3.2) from source with:
 
 ```sh
-$ git clone https://github.com/gourlaysama/biosctl -b v0.3.2
+$ git clone https://github.com/requiem85/biosctl
 $ cd biosctl
 $ cargo build --release
 $ ./target/release/biosctl --version
